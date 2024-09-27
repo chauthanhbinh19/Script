@@ -10,7 +10,7 @@ Connect-AzAccount
 #endregion 
 
 #region Variables
-$ResourceGroupName = "vmdmeo"
+$ResourceGroupName = "vmdemo"
 $VMName = "EncryptWin1"
 $Location = "EAST ASIA"
 $Subnet1Name = "default"
