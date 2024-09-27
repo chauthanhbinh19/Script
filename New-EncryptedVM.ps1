@@ -10,23 +10,23 @@ Connect-AzAccount
 #endregion 
 
 #region Variables
-$ResourceGroupName = "REPLACE_ME"
+$ResourceGroupName = "vmdmeo"
 $VMName = "EncryptWin1"
-$Location = "South Central US"
+$Location = "EAST ASIA"
 $Subnet1Name = "default"
 $VNetName = "Encrypt-VNet"
 $InterfaceName = $VMName + "-NIC"
 $PublicIPName = $VMName + "-PIP"
 $ComputerName = $VMName
-$VMSize = "Standard_B2ms"
-$username = "student"
-$password = "1Cloud_Academy_Labs!"
+$VMSize = "Standard_DS1_v2"
+$username = "adminuser"
+$password = "Admin123456789"
 $StorageName = "castorage" + $ResourceGroupName.replace("-","").replace('cal',"").ToLower()
 $StorageType = "Standard_LRS"
 $OSDiskName = $VMName + "OSDisk"
 $OSPublisherName = "MicrosoftWindowsServer"
 $OSOffer = "WindowsServer"
-$OSSKu = "2019-Datacenter"
+$OSSKu = "2022-Datacenter"
 $OSVersion = "latest"
 #endregion 
 
