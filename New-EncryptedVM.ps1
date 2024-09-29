@@ -4,12 +4,11 @@
 
 #region Azure Login
 Connect-AzAccount 
+Add-AzAccount -SubscriptionId "c2faea9b-1797-4eb5-bd1a-e93b797b1059"
 #endregion 
 
-Add-AzAccount -SubscriptionId ""
-
 #region Variables
-$ResourceGroupName = "REPLACE_ME"
+$ResourceGroupName = "vmlab"
 $VMName = "EncryptWin1"
 $Location = "East Asia"
 $Subnet1Name = "default"
@@ -18,9 +17,9 @@ $InterfaceName = $VMName + "-NIC"
 $PublicIPName = $VMName + "-PIP"
 $ComputerName = $VMName
 $VMSize = "Standard_B2ms"
-$username = "student"
-$password = "1Cloud_Academy_Labs!"
-$StorageName = "castorage" + $ResourceGroupName.replace("-","").replace('cal',"").ToLower()
+$username = "adminvm"
+$password = "admin123456@"
+$StorageName = "labstorage" + $ResourceGroupName.replace("-","").replace('cal',"").ToLower()
 $StorageType = "Standard_LRS"
 $OSDiskName = $VMName + "OSDisk"
 $OSPublisherName = "MicrosoftWindowsServer"
@@ -43,7 +42,7 @@ $ADApp =  New-AzADApplication -DisplayName $aadAppName -StartDate $now -EndDate 
 $credential = New-Object -TypeName "Microsoft.Azure.PowerShell.Cmdlets.Resources.MSGraph.Models.ApiV10.MicrosoftGraphPasswordCredential" -Property @{'DisplayName' = 'labPassword';}
 $appCredential = New-AzADAppCredential -ObjectId $ADapp.Id
 $aadClientSecret = $appCredential.SecretText
-$servicePrincipal = New-AzADServicePrincipal -ApplicationId $ADApp.AppId
+$servicePrincipal = New-AzADServicePrincipal -ApplicationId $ADApp.AppId -Role Contributor
 $aadClientID = $servicePrincipal.AppId
 Write-Host "Successfully created a new AAD Application: $aadAppName with ID: $aadClientID"
 #endregion
@@ -51,21 +50,22 @@ Write-Host "Successfully created a new AAD Application: $aadAppName with ID: $aa
 #region KeyVault
 ############################## Create and Deploy the KeyVault and Keys ##############################
 $keyVaultName = $("MyKeyVault1" + "-" + $ResourceGroupName)
-$keyEncryptionKeyName = $("MyKey1" + "-" + $ResourceGroupName)
 # Create Key Vault
 Write-Host "Creating the KeyVault: $keyVaultName..."
 $keyVault = New-AzKeyVault -VaultName $keyVaultName -ResourceGroupName $ResourceGroupName -Sku Standard -Location $Location -EnabledForDiskEncryption;
-# Set the permissions required to enable the DiskEncryption Policy
-Set-AzKeyVaultAccessPolicy -VaultName $keyVaultName -ServicePrincipalName $aadClientID `
-   -PermissionsToKeys get,list,encrypt,decrypt,create,import,sign,verify,wrapKey,unwrapKey `
-   -PermissionsToSecrets get,list,set
-Set-AzKeyVaultAccessPolicy -VaultName $keyVaultName -EnabledForDiskEncryption
-$diskEncryptionKeyVaultUrl = $keyVault.VaultUri
+$keyVault = Get-AzKeyVault -VaultName $keyVaultName -ResourceGroupName  $ResourceGroupName;
 $keyVaultResourceId = $keyVault.ResourceId
+$diskEncryptionKeyVaultUrl = $keyVault.VaultUri
+
+# Set the permissions required to enable the DiskEncryption Policy
+Set-AzKeyVaultAccessPolicy -VaultName $keyVaultName -ResourceGroupName $ResourceGroupName -EnabledForDiskEncryption
+Set-AzKeyVaultAccessPolicy -VaultName $keyVaultName -ServicePrincipalName $aadClientID -PermissionsToKeys get,list,encrypt,decrypt,create,import,sign,verify,wrapKey,unwrapKey -PermissionsToSecrets get,list,set -ResourceGroupName $ResourceGroupName
+
 # Create the KeyEncryptionKey (KEK)
+$keyEncryptionKeyName = $("MyKey1" + "-" + $ResourceGroupName)
 Write-Host "Creating the KeyEncryptionKey (KEK): $keyEncryptionKeyName..."
-$kek = Add-AzKeyVaultKey -VaultName $keyVaultName -Name $keyEncryptionKeyName -Destination Software
-$keyEncryptionKeyUrl = $kek.Key.Kid
+Add-AzKeyVaultKey -VaultName $keyVaultName -Name $keyEncryptionKeyName -Destination Software
+$keyEncryptionKeyUrl = (Get-AzKeyVaultKey -VaultName $KeyVaultName -Name $keyEncryptionKeyName).Key.kid
 # Output the values of the KeyVault
 Write-Host "KeyVault values that will be needed to enable encryption on the VM" -foregroundcolor Cyan
 Write-Host "KeyVault Name: $keyVaultName" -foregroundcolor Cyan
@@ -119,13 +119,7 @@ New-AzVM -ResourceGroupName $ResourceGroupName -Location $Location -VM $VirtualM
 ############################## Deploy the VM Encryption Extension ###############################
 # Build the encryption extension
 Write-Host "Deploying the VM Encryption Extension..."
-Set-AzVMDiskEncryptionExtension -ResourceGroupName $resourceGroupName -VMName $vmName `
--AadClientID $aadClientID -AadClientSecret $aadClientSecret `
--DiskEncryptionKeyVaultUrl $diskEncryptionKeyVaultUrl -DiskEncryptionKeyVaultId $keyVaultResourceId `
--VolumeType "OS" `
--KeyEncryptionKeyUrl $keyEncryptionKeyUrl `
--KeyEncryptionKeyVaultId $keyVaultResourceId `
--Force
+Set-AzVMDiskEncryptionExtension -ResourceGroupName $resourceGroupName -VMName $vmName -AadClientID $aadClientID -AadClientSecret $aadClientSecret -DiskEncryptionKeyVaultUrl $diskEncryptionKeyVaultUrl -DiskEncryptionKeyVaultId $keyVaultResourceId -VolumeType "OS" -KeyEncryptionKeyUrl $keyEncryptionKeyUrl -KeyEncryptionKeyVaultId $keyVaultResourceId -Force
 #endregion
 
 ############################## Verify the encryption process ##############################
