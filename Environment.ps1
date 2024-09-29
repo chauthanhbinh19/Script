@@ -1,13 +1,13 @@
 function Install-AzurePowerShell {
-    $ProgressPreference = 'SilentlyContinue'  # Ignore progress updates (100X speedup)
-    Install-PackageProvider -Name NuGet -Force -Confirm:$false
+    $ProgressPreference = 'SilentlyContinue' # Ignore progress updates (100X speedup)
+    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$false
     Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-    Install-Module Az.Accounts -Confirm:$false
-    Install-Module Az.Resources -Confirm:$false
-    Install-Module Az.Compute -Confirm:$false
-    Install-Module Az.KeyVault -Confirm:$false
-    Install-Module Az.Network -Confirm:$false
-    Install-Module Az.Storage -Confirm:$false
+    Install-Module Az.Accounts -RequiredVersion 2.7.2 -Confirm:$false
+    Install-Module Az.Resources -RequiredVersion 5.2.0 -Confirm:$false
+    Install-Module Az.Compute -RequiredVersion 4.23.0 -Confirm:$false
+    Install-Module Az.KeyVault -RequiredVersion 4.2.1 -Confirm:$false
+    Install-Module Az.Network -RequiredVersion 4.14.0 -Confirm:$false
+    Install-Module Az.Storage -RequiredVersion 4.2.0 -Confirm:$false
 }
 
 
@@ -25,6 +25,21 @@ function Set-LabArtifacts {
 
 }
 
+function Disable-InternetExplorerESC {
+    $AdminKey = "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}"
+    $UserKey = "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A8-37EF-4b3f-8CFC-4F3A74704073}"
+    Set-ItemProperty -Path $AdminKey -Name "IsInstalled" -Value 0 -Force
+    Set-ItemProperty -Path $UserKey -Name "IsInstalled" -Value 0 -Force
+    Stop-Process -Name Explorer -Force
+    Write-Host "IE Enhanced Security Configuration (ESC) has been disabled." -ForegroundColor Green
+}
 
+function Disable-UserAccessControl {
+    Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Value 00000000 -Force
+    Write-Host "User Access Control (UAC) has been disabled." -ForegroundColor Green    
+}
+
+Disable-UserAccessControl
+Disable-InternetExplorerESC
 Install-AzurePowerShell
 Set-LabArtifacts
