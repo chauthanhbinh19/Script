@@ -14,7 +14,7 @@ function Install-AzurePowerShell {
 function Set-LabArtifacts {
     $ProgressPreference = 'SilentlyContinue'
     [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls" 
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/chauthanhbinh19/Script/refs/heads/main/New-EncryptedVM.ps1" -OutFile C:\Users\student\Desktop\New-EncryptedVM.ps1
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/chauthanhbinh19/Script/refs/heads/main/New-EncryptedVM.ps1" -OutFile C:\Users\adminvm\Desktop\New-EncryptedVM.ps1
     # Create backup
     $path = "C:\Scripts"
     if(!(Test-Path $path))
