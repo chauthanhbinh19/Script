@@ -6,7 +6,7 @@ Connect-AzAccount
 #endregion 
 
 #region Variables
-$ResourceGroupName = "cclab-21521176"
+$ResourceGroupName = "cclab-2024y"
 $VMName = "EncryptWin1"
 $Location = "East Asia"
 $Subnet1Name = "default"
